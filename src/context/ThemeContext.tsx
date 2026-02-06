@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
     theme: Theme;
-    setTheme: (theme: Theme) => void;
-    resolvedTheme: 'light' | 'dark';
+    toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -13,49 +12,28 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem('timeboxing-theme');
-        return (saved as Theme) || 'system';
+        if (saved === 'light' || saved === 'dark') return saved;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     });
-
-    const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
     useEffect(() => {
         const root = window.document.documentElement;
 
-        const updateTheme = () => {
-            let resolved: 'light' | 'dark';
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
 
-            if (theme === 'system') {
-                resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            } else {
-                resolved = theme;
-            }
-
-            setResolvedTheme(resolved);
-
-            if (resolved === 'dark') {
-                root.classList.add('dark');
-            } else {
-                root.classList.remove('dark');
-            }
-        };
-
-        updateTheme();
         localStorage.setItem('timeboxing-theme', theme);
-
-        // Listen for system theme changes
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => {
-            if (theme === 'system') {
-                updateTheme();
-            }
-        };
-
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
     }, [theme]);
 
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
+
     return (
-        <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );
