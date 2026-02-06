@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { type Task, type TaskStats } from '../types/task';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { type Task, type TaskStats, type RecurrencePattern } from '../types/task';
 
 // Simple ID generator
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -11,6 +11,24 @@ const getTodayString = () => new Date().toISOString().split('T')[0];
 const isToday = (dateStr?: string) => {
     if (!dateStr) return false;
     return dateStr.startsWith(getTodayString());
+};
+
+// Get day of week (0 = Sunday, 1 = Monday, etc.)
+const getDayOfWeek = () => new Date().getDay();
+
+// Check if recurrence should trigger today
+const shouldCreateToday = (recurrence: RecurrencePattern): boolean => {
+    const dayOfWeek = getDayOfWeek();
+    switch (recurrence) {
+        case 'daily':
+            return true;
+        case 'weekdays':
+            return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
+        case 'weekly':
+            return dayOfWeek === 1; // Every Monday
+        default:
+            return false;
+    }
 };
 
 // Calculate streak (consecutive days with completed tasks)
@@ -44,7 +62,7 @@ const calculateStreak = (tasks: Task[]): number => {
 
 interface TaskContextType {
     tasks: Task[];
-    addTask: (title: string, duration: number) => void;
+    addTask: (title: string, duration: number, recurrence?: RecurrencePattern, recurrenceTime?: string) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
     scheduleTask: (id: string, time: string) => void;
@@ -55,6 +73,8 @@ interface TaskContextType {
     stopTask: () => void;
     clearCompleted: () => void;
     stats: TaskStats;
+    recurringTemplates: Task[];
+    deleteRecurringTemplate: (id: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -71,21 +91,63 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('timeboxing-tasks', JSON.stringify(tasks));
     }, [tasks]);
 
+    // Get recurring templates
+    const recurringTemplates = useMemo(() =>
+        tasks.filter(t => t.isRecurringTemplate),
+        [tasks]
+    );
+
+    // Generate recurring tasks for today
+    const generateRecurringTasks = useCallback(() => {
+        const todayStr = getTodayString();
+
+        recurringTemplates.forEach(template => {
+            if (!template.recurrence || template.recurrence === 'none') return;
+            if (!shouldCreateToday(template.recurrence)) return;
+
+            // Check if we already created a task for this template today
+            const alreadyCreated = tasks.some(t =>
+                t.parentRecurringId === template.id &&
+                t.createdAt?.startsWith(todayStr)
+            );
+
+            if (!alreadyCreated) {
+                const newTask: Task = {
+                    id: generateId(),
+                    title: template.title,
+                    duration: template.duration,
+                    status: 'idle',
+                    createdAt: new Date().toISOString(),
+                    scheduledTime: template.recurrenceTime,
+                    parentRecurringId: template.id,
+                };
+                setTasks(prev => [...prev, newTask]);
+            }
+        });
+    }, [recurringTemplates, tasks]);
+
+    // Run recurring task generation on mount and when templates change
+    useEffect(() => {
+        generateRecurringTasks();
+    }, [generateRecurringTasks]);
+
     // Calculate statistics
     const stats = useMemo<TaskStats>(() => {
-        const todayTasks = tasks.filter(t =>
+        const nonTemplateTasks = tasks.filter(t => !t.isRecurringTemplate);
+
+        const todayTasks = nonTemplateTasks.filter(t =>
             t.createdAt && isToday(t.createdAt) ||
             t.scheduledTime ||
             (t.completedAt && isToday(t.completedAt))
         );
 
-        const completedToday = tasks.filter(t =>
+        const completedToday = nonTemplateTasks.filter(t =>
             t.status === 'completed' && t.completedAt && isToday(t.completedAt)
         );
 
         const totalFocusTimeToday = completedToday.reduce((acc, t) => acc + t.duration, 0);
 
-        const totalScheduledToday = tasks.filter(t => t.scheduledTime).length;
+        const totalScheduledToday = nonTemplateTasks.filter(t => t.scheduledTime).length;
         const completionRate = totalScheduledToday > 0
             ? Math.round((completedToday.length / totalScheduledToday) * 100)
             : 0;
@@ -94,20 +156,55 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             totalTasksToday: todayTasks.length,
             completedToday: completedToday.length,
             totalFocusTimeToday,
-            streak: calculateStreak(tasks),
+            streak: calculateStreak(nonTemplateTasks),
             completionRate
         };
     }, [tasks]);
 
-    const addTask = (title: string, duration: number) => {
-        const newTask: Task = {
-            id: generateId(),
-            title,
-            duration,
-            status: 'idle',
-            createdAt: new Date().toISOString(),
-        };
-        setTasks((prev) => [...prev, newTask]);
+    const addTask = (title: string, duration: number, recurrence?: RecurrencePattern, recurrenceTime?: string) => {
+        if (recurrence && recurrence !== 'none') {
+            // Create a recurring template
+            const template: Task = {
+                id: generateId(),
+                title,
+                duration,
+                status: 'idle',
+                createdAt: new Date().toISOString(),
+                recurrence,
+                recurrenceTime,
+                isRecurringTemplate: true,
+            };
+            setTasks(prev => [...prev, template]);
+
+            // Also create today's instance if applicable
+            if (shouldCreateToday(recurrence)) {
+                const todayInstance: Task = {
+                    id: generateId(),
+                    title,
+                    duration,
+                    status: 'idle',
+                    createdAt: new Date().toISOString(),
+                    scheduledTime: recurrenceTime,
+                    parentRecurringId: template.id,
+                };
+                setTasks(prev => [...prev, todayInstance]);
+            }
+        } else {
+            // Regular task
+            const newTask: Task = {
+                id: generateId(),
+                title,
+                duration,
+                status: 'idle',
+                createdAt: new Date().toISOString(),
+            };
+            setTasks(prev => [...prev, newTask]);
+        }
+    };
+
+    const deleteRecurringTemplate = (id: string) => {
+        // Delete template and all its instances
+        setTasks(prev => prev.filter(t => t.id !== id && t.parentRecurringId !== id));
     };
 
     const updateTask = (id: string, updates: Partial<Task>) => {
@@ -217,7 +314,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 completeTask,
                 stopTask,
                 clearCompleted,
-                stats
+                stats,
+                recurringTemplates,
+                deleteRecurringTemplate
             }}
         >
             {children}
