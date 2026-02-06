@@ -33,16 +33,18 @@ export const BacklogPanel: React.FC = () => {
     return (
         <div className="flex flex-col h-full gap-4">
             <Card className={cn(
-                "flex-1 flex flex-col border shadow-sm transition-all",
-                isOver && "ring-2 ring-primary/50 bg-primary/5"
+                "flex-1 flex flex-col border-border/40 transition-all shadow-soft glass overflow-hidden",
+                isOver && "ring-2 ring-primary/30 bg-primary/5"
             )}>
                 <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Inbox className="w-4 h-4 text-muted-foreground" />
-                            <CardTitle className="text-base">Backlog</CardTitle>
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-1.5 rounded-lg bg-primary/5">
+                                <Inbox className="w-4 h-4 text-primary" />
+                            </div>
+                            <CardTitle className="text-base font-bold tracking-tight">Backlog</CardTitle>
                         </div>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider">
                             {backlogTasks.length}
                         </Badge>
                     </div>

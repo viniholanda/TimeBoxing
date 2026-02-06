@@ -56,26 +56,32 @@ const AppContent: React.FC = () => {
   const formattedDate = today.toLocaleDateString('pt-BR', dateOptions);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/10 selection:text-primary">
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-40 w-full glass border-b shadow-sm">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <Calendar className="w-5 h-5 text-primary" />
+            <div className="p-2 rounded-xl bg-primary shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95">
+              <Calendar className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight">TimeBoxing</h1>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight leading-none">TimeBoxing</h1>
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Focus & Productivity</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-medium capitalize">{formattedDate}</span>
+            </div>
             <ThemeToggle />
-            <span className="text-sm text-muted-foreground capitalize">{formattedDate}</span>
           </div>
         </div>
       </header>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <main className="flex-1 overflow-auto">
-          <div className="container mx-auto p-4">
+        <main className="flex-1 overflow-visible py-8">
+          <div className="container mx-auto px-4 max-w-7xl animate-fade-in">
             {/* Stats Dashboard */}
             <StatsPanel />
             <ProgressCard />

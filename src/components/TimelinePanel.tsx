@@ -40,28 +40,25 @@ interface HourBlockProps {
 
 const HourBlock: React.FC<HourBlockProps> = ({ hour, currentSlot }) => {
     const hourStr = hour.toString().padStart(2, '0');
-
-    // Create drop zones for 00, 15, 30, 45
     const slots = ['00', '15', '30', '45'];
 
     return (
-        <div
-            className="flex border-b border-border/50 relative"
-            style={{ height: `${HOUR_HEIGHT_PX}px` }}
-        >
+        <div className="flex border-b border-border/30 relative group/hour" style={{ height: `${HOUR_HEIGHT_PX}px` }}>
             {/* Time label column */}
             <div className={cn(
-                "w-16 py-2 pr-3 text-right text-xs border-r border-border/50 font-mono shrink-0 transition-colors relative",
-                slots.some(s => `${hourStr}:${s}` === currentSlot) ? "text-blue-600 font-semibold" : "text-muted-foreground"
+                "w-16 flex flex-col items-center justify-start pt-2 text-[10px] font-bold tracking-tighter border-r border-border/30 bg-secondary/20 transition-colors group-hover/hour:bg-secondary/40",
+                "text-muted-foreground/60"
             )}>
-                {`${hourStr}:00`}
+                <span className="bg-background px-1.5 py-0.5 rounded shadow-sm border border-border/50">{`${hourStr}:00`}</span>
                 {slots.some(s => `${hourStr}:${s}` === currentSlot) && (
-                    <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-blue-500" />
+                    <div className="mt-2 flex flex-col items-center gap-1 animate-pulse">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                        <span className="text-[8px] text-red-500 font-black uppercase">Agora</span>
+                    </div>
                 )}
             </div>
-
             {/* Content area with 4 droppable zones */}
-            <div className="flex-1 relative flex flex-col h-full">
+            <div className="flex-1 relative flex flex-col h-full bg-grid-pattern">
                 {slots.map((min) => (
                     <SubDropZone
                         key={min}
@@ -80,20 +77,30 @@ interface SubDropZoneProps {
 }
 
 const SubDropZone: React.FC<SubDropZoneProps> = ({ time, isCurrent }) => {
-    const { setNodeRef, isOver } = useDroppable({ id: time });
+    const { setNodeRef, isOver } = useDroppable({
+        id: time,
+        data: { time }
+    });
 
     return (
         <div
             ref={setNodeRef}
             className={cn(
-                "w-full transition-colors relative flex-1 border-b border-dotted border-border/10 last:border-0",
-                isOver && "bg-primary/10",
-                isCurrent && "bg-blue-50/30"
+                "flex-1 border-b border-border/10 last:border-0 transition-all duration-200 relative group/slot",
+                isOver ? "bg-primary/5 scale-[0.99] z-20" : "hover:bg-primary/[0.02]",
+                isCurrent && "bg-red-500/5 text-red-500"
             )}
         >
+            {/* Time indicator on hover */}
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/slot:opacity-100 transition-opacity pointer-events-none">
+                <span className="text-[9px] font-bold text-primary/40 bg-background/80 px-1 rounded border border-primary/10">
+                    {time}
+                </span>
+            </div>
+
             {isOver && (
-                <div className="absolute inset-0.5 border-2 border-dashed border-primary/50 rounded flex items-center justify-center pointer-events-none z-20">
-                    <span className="text-[10px] text-primary font-medium">Solte aqui</span>
+                <div className="absolute inset-0 border-2 border-dashed border-primary/30 m-0.5 rounded-md animate-pulse flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-primary/50 uppercase tracking-widest">Soltar aqui</span>
                 </div>
             )}
         </div>

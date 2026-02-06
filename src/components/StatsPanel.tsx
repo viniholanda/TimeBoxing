@@ -3,6 +3,7 @@ import { useTasks } from '../context/TaskContext';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
+import { cn } from '../lib/utils';
 import { Target, Clock, Flame, CheckCircle2, TrendingUp } from 'lucide-react';
 
 export const StatsPanel: React.FC = () => {
@@ -10,75 +11,77 @@ export const StatsPanel: React.FC = () => {
 
     const scheduledTasks = tasks.filter(t => t.scheduledTime && t.status !== 'completed').length;
 
+    const statItems = [
+        {
+            label: 'Concluídas today',
+            value: stats.completedToday,
+            suffix: 'hoje',
+            icon: CheckCircle2,
+            color: 'green',
+            gradient: 'from-green-500/10 to-emerald-500/5',
+            borderColor: 'border-green-500/10',
+            iconBg: 'bg-green-500/20',
+            iconColor: 'text-green-600 dark:text-green-500',
+            valColor: 'text-green-600 dark:text-green-400'
+        },
+        {
+            label: 'Tempo Focado',
+            value: stats.totalFocusTimeToday >= 60
+                ? `${Math.floor(stats.totalFocusTimeToday / 60)}h${stats.totalFocusTimeToday % 60 > 0 ? ` ${stats.totalFocusTimeToday % 60}m` : ''}`
+                : `${stats.totalFocusTimeToday}m`,
+            icon: Clock,
+            color: 'blue',
+            gradient: 'from-blue-500/10 to-indigo-500/5',
+            borderColor: 'border-blue-500/10',
+            iconBg: 'bg-blue-500/20',
+            iconColor: 'text-blue-600 dark:text-blue-500',
+            valColor: 'text-blue-600 dark:text-blue-400'
+        },
+        {
+            label: 'Sequência',
+            value: stats.streak,
+            suffix: stats.streak === 1 ? 'dia' : 'dias',
+            icon: Flame,
+            color: 'orange',
+            gradient: 'from-orange-500/10 to-amber-500/5',
+            borderColor: 'border-orange-500/10',
+            iconBg: 'bg-orange-500/20',
+            iconColor: 'text-orange-600 dark:text-orange-500',
+            valColor: 'text-orange-600 dark:text-orange-400'
+        },
+        {
+            label: 'Agendadas',
+            value: scheduledTasks,
+            suffix: 'tarefas',
+            icon: Target,
+            color: 'purple',
+            gradient: 'from-purple-500/10 to-violet-500/5',
+            borderColor: 'border-purple-500/10',
+            iconBg: 'bg-purple-500/20',
+            iconColor: 'text-purple-600 dark:text-purple-500',
+            valColor: 'text-purple-600 dark:text-purple-400'
+        }
+    ];
+
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {/* Completed Today */}
-            <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-green-200/50">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-lg bg-green-500/20">
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {statItems.map((item, i) => (
+                <Card key={i} className={cn("relative overflow-hidden border-none shadow-soft transition-all hover:scale-[1.02] hover:-translate-y-1 group", item.gradient)}>
+                    <div className={cn("absolute inset-0 border border-current opacity-[0.08]", item.borderColor)} />
+                    <CardContent className="p-5 flex flex-col justify-between h-full relative z-10">
+                        <div className="flex items-center gap-2.5 mb-3">
+                            <div className={cn("p-2 rounded-xl transition-colors group-hover:scale-110", item.iconBg)}>
+                                <item.icon className={cn("w-4 h-4", item.iconColor)} />
+                            </div>
+                            <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">{item.label}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground font-medium">Concluídas</span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-green-600">{stats.completedToday}</span>
-                        <span className="text-sm text-muted-foreground">hoje</span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Focus Time */}
-            <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border-blue-200/50">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-lg bg-blue-500/20">
-                            <Clock className="w-4 h-4 text-blue-600" />
+                        <div className="flex items-baseline gap-1.5">
+                            <span className={cn("text-3xl font-black tracking-tight", item.valColor)}>{item.value}</span>
+                            {item.suffix && <span className="text-xs text-muted-foreground/70 font-medium">{item.suffix}</span>}
                         </div>
-                        <span className="text-xs text-muted-foreground font-medium">Tempo Focado</span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-blue-600">
-                            {stats.totalFocusTimeToday >= 60
-                                ? `${Math.floor(stats.totalFocusTimeToday / 60)}h${stats.totalFocusTimeToday % 60 > 0 ? ` ${stats.totalFocusTimeToday % 60}m` : ''}`
-                                : `${stats.totalFocusTimeToday}m`
-                            }
-                        </span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Streak */}
-            <Card className="bg-gradient-to-br from-orange-500/10 to-amber-500/5 border-orange-200/50">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-lg bg-orange-500/20">
-                            <Flame className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <span className="text-xs text-muted-foreground font-medium">Sequência</span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-orange-600">{stats.streak}</span>
-                        <span className="text-sm text-muted-foreground">{stats.streak === 1 ? 'dia' : 'dias'}</span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Tasks Scheduled */}
-            <Card className="bg-gradient-to-br from-purple-500/10 to-violet-500/5 border-purple-200/50">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-lg bg-purple-500/20">
-                            <Target className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <span className="text-xs text-muted-foreground font-medium">Agendadas</span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-purple-600">{scheduledTasks}</span>
-                        <span className="text-sm text-muted-foreground">tarefas</span>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            ))}
         </div>
     );
 };
@@ -94,36 +97,46 @@ export const ProgressCard: React.FC = () => {
     if (scheduledTasks === 0) return null;
 
     return (
-        <Card className="mb-6">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-primary" />
-                        <span className="font-medium text-sm">Progresso do Dia</span>
+        <Card className="mb-8 overflow-hidden glass border-border/40 shadow-soft">
+            <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-primary/5">
+                            <TrendingUp className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                            <span className="font-bold text-base block">Progresso do Dia</span>
+                            <span className="text-xs text-muted-foreground font-medium">Você está {progressValue}% mais perto da meta</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Badge variant={progressValue >= 100 ? "success" : progressValue >= 50 ? "secondary" : "outline"}>
-                            {stats.completedToday} / {scheduledTasks}
+                    <div className="flex items-center gap-3">
+                        <Badge className="px-3 py-1 rounded-full text-xs font-bold" variant={progressValue >= 100 ? "success" : "secondary"}>
+                            {stats.completedToday} / {scheduledTasks} tarefas
                         </Badge>
-                        <span className="text-sm font-bold text-primary">{progressValue}%</span>
+                        <span className="text-2xl font-black text-primary leading-none">{progressValue}%</span>
                     </div>
                 </div>
-                <Progress
-                    value={progressValue}
-                    className="h-2"
-                    indicatorClassName={
-                        progressValue >= 100
-                            ? "bg-green-500"
-                            : progressValue >= 50
-                                ? "bg-blue-500"
-                                : "bg-primary"
-                    }
-                />
+                <div className="relative pt-1">
+                    <Progress
+                        value={progressValue}
+                        className="h-3 rounded-full bg-secondary"
+                        indicatorClassName={cn(
+                            "transition-all duration-700 ease-out",
+                            progressValue >= 100
+                                ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                                : progressValue >= 50
+                                    ? "bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                                    : "bg-primary shadow-[0_0_15px_rgba(var(--color-primary),0.2)]"
+                        )}
+                    />
+                </div>
                 {progressValue >= 100 && (
-                    <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Parabéns! Você completou todas as tarefas de hoje! 🎉
-                    </p>
+                    <div className="flex items-center gap-2 mt-4 px-3 py-2 bg-green-500/10 rounded-lg border border-green-500/20 animate-fade-in">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">🎉</div>
+                        <p className="text-sm text-green-700 dark:text-green-400 font-bold">
+                            Excelente trabalho! Meta do dia batida com perfeição.
+                        </p>
+                    </div>
                 )}
             </CardContent>
         </Card>
