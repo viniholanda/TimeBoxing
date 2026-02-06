@@ -12,9 +12,11 @@ import { playCompletionSound, playWarningSound } from '../lib/sounds';
 interface TaskCardProps {
     task: Task;
     isOverlay?: boolean;
+    style?: React.CSSProperties;
+    className?: string; // Allow overriding classes like mb-2
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, isOverlay }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, isOverlay, style, className }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(task.title);
     const [editDuration, setEditDuration] = useState(task.duration.toString());
@@ -80,9 +82,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isOverlay }) => {
         }
     }, [isEditing]);
 
-    const style = transform ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    } : undefined;
+    const combinedStyle = {
+        ...style,
+        ...(transform ? {
+            transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        } : undefined),
+    };
 
     const handleSave = () => {
         if (editTitle.trim()) {
@@ -237,45 +242,63 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isOverlay }) => {
         );
     }
 
+    // Detect compact mode from className
+    const isCompact = className?.includes('compact');
+
     // Default idle state
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none group">
-            <Card className={cn("mb-2 cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors", isDragging && "opacity-30", isOverlay && "opacity-100 shadow-xl scale-105 border-primary bg-background z-50")}>
-                <CardContent className="p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <GripVertical className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{task.title}</span>
+        <div ref={setNodeRef} style={combinedStyle} {...attributes} {...listeners} className={cn("touch-none group", isCompact ? "h-[20px]" : "h-full")}>
+            <Card className={cn(
+                "cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors",
+                isCompact ? "h-[20px] rounded-sm border-0 bg-transparent shadow-none" : "mb-2 h-full",
+                isDragging && "opacity-30",
+                isOverlay && "opacity-100 shadow-xl scale-105 border-primary bg-background z-50",
+                className
+            )}>
+                <CardContent className={cn(
+                    "flex items-center justify-between",
+                    isCompact ? "p-0 px-1 h-[20px]" : "p-2 px-3 h-full"
+                )}>
+                    <div className="flex items-center gap-1 overflow-hidden flex-1">
+                        <GripVertical className={cn("text-muted-foreground shrink-0", isCompact ? "w-2 h-2" : "w-3 h-3")} />
+                        <span className={cn("font-medium truncate", isCompact ? "text-xs" : "text-sm")}>{task.title}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">{task.duration}m</span>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                        <span className={cn("text-muted-foreground bg-secondary rounded", isCompact ? "text-[10px] px-1 py-0" : "text-xs px-2 py-1")}>{task.duration}m</span>
 
                         {/* Edit button - visible on hover */}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className={cn(
+                                "opacity-0 group-hover:opacity-100 transition-opacity",
+                                isCompact ? "h-4 w-4" : "h-6 w-6"
+                            )}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setIsEditing(true);
                             }}
                         >
-                            <Pencil className="w-3 h-3" />
+                            <Pencil className={isCompact ? "w-2 h-2" : "w-3 h-3"} />
                         </Button>
 
                         {/* Delete button - visible on hover */}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                            className={cn(
+                                "opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive",
+                                isCompact ? "h-4 w-4" : "h-6 w-6"
+                            )}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 deleteTask(task.id);
                             }}
                         >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className={isCompact ? "w-2 h-2" : "w-3 h-3"} />
                         </Button>
 
-                        {task.scheduledTime && !isOverlay && (
+                        {task.scheduledTime && !isOverlay && !isCompact && (
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {
                                 e.stopPropagation();
                                 startTask(task.id);

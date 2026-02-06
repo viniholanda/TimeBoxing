@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { DndContext, DragOverlay, type DragStartEvent, type DragEndEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { TaskProvider, useTasks } from './context/TaskContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { BacklogPanel } from './components/BacklogPanel';
 import { TimelinePanel } from './components/TimelinePanel';
 import { TaskCard } from './components/TaskCard';
+import { ThemeToggle } from './components/ThemeToggle';
 import { StatsPanel, ProgressCard } from './components/StatsPanel';
 import { type Task } from './types/task';
 import { Calendar } from 'lucide-react';
@@ -32,14 +34,15 @@ const AppContent: React.FC = () => {
     if (!over) return;
 
     const overId = over.id.toString();
+    const taskId = active.id.toString();
 
     // Dropped on a time slot (Timeline)
     if (overId.includes(':')) {
-      scheduleTask(active.id.toString(), overId);
+      scheduleTask(taskId, overId);
     }
     // Dropped on backlog area
     else if (overId === 'backlog-droppable') {
-      unscheduleTask(active.id.toString());
+      unscheduleTask(taskId);
     }
   };
 
@@ -63,8 +66,9 @@ const AppContent: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold tracking-tight">TimeBoxing</h1>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="capitalize">{formattedDate}</span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-sm text-muted-foreground capitalize">{formattedDate}</span>
           </div>
         </div>
       </header>
@@ -100,9 +104,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <TaskProvider>
-      <AppContent />
-    </TaskProvider>
+    <ThemeProvider>
+      <TaskProvider>
+        <AppContent />
+      </TaskProvider>
+    </ThemeProvider>
   );
 };
 

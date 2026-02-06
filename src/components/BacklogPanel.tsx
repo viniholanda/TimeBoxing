@@ -87,7 +87,11 @@ export const BacklogPanel: React.FC = () => {
                         </div>
                     )}
                     {backlogTasks.map(task => (
-                        <TaskCard key={task.id} task={task} />
+                        <TaskCard
+                            key={task.id}
+                            task={task}
+                            className="w-full mb-0.5 shadow-none border-l-2 border-l-primary/30 hover:border-l-primary transition-all compact"
+                        />
                     ))}
 
                     {completedTasks.length > 0 && (

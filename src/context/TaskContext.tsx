@@ -120,8 +120,56 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTasks((prev) => prev.filter((t) => t.id !== id));
     };
 
+    // Helper to convert time string to minutes
+    const timeToMinutes = (time: string): number => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    // Helper to convert minutes to time string
+    const minutesToTime = (minutes: number): string => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+
+    // Find next available slot that doesn't overlap
+    const findAvailableSlot = (targetTime: string, duration: number, excludeId: string): string => {
+        const scheduledTasks = tasks
+            .filter(t => t.scheduledTime && t.status !== 'completed' && t.id !== excludeId)
+            .map(t => ({
+                start: timeToMinutes(t.scheduledTime!),
+                end: timeToMinutes(t.scheduledTime!) + t.duration
+            }))
+            .sort((a, b) => a.start - b.start);
+
+        let targetStart = timeToMinutes(targetTime);
+        const targetEnd = targetStart + duration;
+
+        // Check for overlaps and find next available slot
+        for (const task of scheduledTasks) {
+            // If target overlaps with this task
+            if (targetStart < task.end && targetEnd > task.start) {
+                // Move target to after this task (rounded to 15 min)
+                targetStart = Math.ceil(task.end / 15) * 15;
+            }
+        }
+
+        // Cap at 23:45 max
+        if (targetStart > 23 * 60 + 45) {
+            targetStart = 23 * 60 + 45;
+        }
+
+        return minutesToTime(targetStart);
+    };
+
     const scheduleTask = (id: string, time: string) => {
-        updateTask(id, { scheduledTime: time });
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        // Find available slot (may adjust time if overlap)
+        const availableTime = findAvailableSlot(time, task.duration, id);
+        updateTask(id, { scheduledTime: availableTime });
     };
 
     const unscheduleTask = (id: string) => {
