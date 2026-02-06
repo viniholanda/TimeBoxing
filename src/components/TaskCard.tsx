@@ -245,11 +245,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isOverlay, style, clas
 
     // Default idle state
     return (
-        <div ref={setNodeRef} style={combinedStyle} {...attributes} {...listeners} className={cn("touch-none group", isCompact ? "h-[20px]" : "h-full")}>
+        <div ref={setNodeRef} style={combinedStyle} {...attributes} {...listeners} className={cn("touch-none group", isCompact ? "h-[25px]" : "h-full")}>
             <Card className={cn(
                 "cursor-grab active:cursor-grabbing hover:border-primary/50 transition-all duration-200",
                 isCompact
-                    ? "h-[20px] rounded-sm border-0 bg-transparent shadow-none"
+                    ? "h-[25px] rounded-sm border-0 bg-transparent shadow-none"
                     : "mb-2 h-full shadow-sm hover:shadow-md hover:-translate-y-0.5 border-border/50 bg-card",
                 isDragging && "opacity-30",
                 isOverlay && "opacity-100 shadow-xl scale-105 border-primary bg-background z-50",
@@ -257,7 +257,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isOverlay, style, clas
             )}>
                 <CardContent className={cn(
                     "flex items-center justify-between",
-                    isCompact ? "p-0 px-1 h-[20px]" : "p-3 px-4 h-full"
+                    isCompact ? "p-0 px-1 h-[25px]" : "p-3 px-4 h-full"
                 )}>
                     <div className="flex items-center gap-2 overflow-hidden flex-1">
                         <GripVertical className={cn("text-muted-foreground/40 shrink-0", isCompact ? "w-2 h-2" : "w-3.5 h-3.5")} />
